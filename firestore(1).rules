@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['persona', 'length', 'microStepType', 'email'])
+        && data.keys().size() == 4
+        && data.persona in ['Supportive Peer', 'Direct Coach', 'Formal Mentor']
+        && data.length in ['Ultra-short (<50 words)', 'Detailed (<150 words)']
+        && data.microStepType in ['Physical', 'Digital', 'Mental']
+        && data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidSession(data) {
+      return data.keys().hasAll(['userId', 'emotion', 'task', 'aiResponse', 'timestamp', 'completed'])
+        && data.keys().size() == 6
+        && data.userId == request.auth.uid
+        && data.emotion is string && data.emotion.size() <= 50
+        && data.task is string && data.task.size() <= 1000
+        && data.aiResponse is string && data.aiResponse.size() <= 2000
+        && data.timestamp is timestamp
+        && data.completed is bool;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['text', 'completed', 'createdAt'])
+        && data.keys().size() == 3
+        && data.text is string && data.text.size() <= 500
+        && data.completed is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidLog(data) {
+      return data.keys().hasAll(['appName', 'confidence', 'timestamp'])
+        && data.appName is string && data.appName.size() <= 100
+        && data.confidence is number
+        && data.timestamp is timestamp;
+    }
+
+    // Collection Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming())
+        && incoming().diff(existing()).affectedKeys().hasAny(['persona', 'length', 'microStepType']);
+    }
+
+    match /users/{userId}/sessions/{sessionId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSession(incoming());
+      // Updates allowed for completion status
+      allow update: if isOwner(userId) && isValidSession(incoming())
+        && (incoming().diff(existing()).affectedKeys().hasOnly(['completed']));
+    }
+
+    match /users/{userId}/tasks/{taskId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTask(incoming());
+      allow update: if isOwner(userId) && isValidTask(incoming())
+        && (incoming().diff(existing()).affectedKeys().hasAny(['text', 'completed']));
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/logs/{logId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidLog(incoming());
+    }
+  }
+}

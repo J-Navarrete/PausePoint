@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", ui-serif, Georgia, serif;
+  
+  --color-natural-bg: #FAF9F6;
+  --color-natural-surface: #F5F5F0;
+  --color-natural-sidebar: #F2F1ED;
+  --color-natural-border: #E6E4DF;
+  --color-natural-text: #2D2D2A;
+  --color-natural-text-muted: #8A8882;
+  --color-natural-primary: #5A5A40;
+  --color-natural-accent: #A35D4B;
+}
+
+@layer base {
+  body {
+    @apply bg-natural-bg text-natural-text antialiased;
+  }
+}
+
+/* Custom scrollbar for the vertical phone feed */
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

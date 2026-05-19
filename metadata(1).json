@@ -1,0 +1,8 @@
+{
+  "name": "Mindful Speedbump",
+  "description": "An AI-powered accountability agent that intercepts scrolling to provide empathetic micro-steps for task avoidance.",
+  "requestFramePermissions": ["display-capture"],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
